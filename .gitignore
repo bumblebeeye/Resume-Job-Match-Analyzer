@@ -1,0 +1,16 @@
+.DS_Store
+.env
+.env.local
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.sqlite3
+
+node_modules/
+.next/
+out/
+
+backend/storage/resumes/*
+!backend/storage/resumes/.gitkeep
