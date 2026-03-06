@@ -14,3 +14,4 @@ out/
 
 backend/storage/resumes/*
 !backend/storage/resumes/.gitkeep
+backend/backend/storage/resumes/*
