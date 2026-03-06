@@ -20,7 +20,7 @@
 - Analyzer page (`/analyze`) with upload form and result UI
 - API integration for analysis submission/result rendering
 
-## Phase 3
+## Phase 3 (implemented)
 - History page (`/history`)
 - Analysis detail page (`/history/[id]`)
 - Frontend data loading states and empty states

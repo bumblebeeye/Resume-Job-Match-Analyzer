@@ -1,3 +1,11 @@
+export type AnalysisListItem = {
+  id: number;
+  role_title: string;
+  company_name: string | null;
+  match_score: number;
+  created_at: string;
+};
+
 export type AnalysisResult = {
   id: number;
   resume_id: number;
@@ -13,4 +21,3 @@ export type AnalysisResult = {
   analysis_metadata: Record<string, unknown>;
   created_at: string;
 };
-

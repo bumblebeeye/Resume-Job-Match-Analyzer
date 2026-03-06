@@ -3,7 +3,7 @@
 Resume-Job Match Analyzer is a portfolio-oriented full-stack MVP that compares an uploaded resume against a job description and returns an AI-assisted fit analysis.
 
 This repository is being built in phases.  
-Current status: **Phase 2 complete (`/` and `/analyze` frontend + backend foundation).**
+Current status: **Phase 3 complete (`/history` and `/history/[id]` added).**
 
 ## Why this project
 
@@ -59,6 +59,24 @@ docs/          # build phases and planning notes
   - loading/error state handling
   - result UI for match score, overlap skills, missing skills, summary, suggestions
 - Frontend-to-backend integration with `POST /api/analyze`
+
+## Phase 3 features implemented
+
+- History page (`/history`) with:
+  - analysis list view
+  - loading state
+  - empty state
+  - error state
+- Analysis detail page (`/history/[id]`) with:
+  - role/company/resume metadata
+  - match score
+  - summary
+  - overlapping and missing skills
+  - improvement suggestions
+  - not-found handling
+- Frontend API integration with:
+  - `GET /api/analyses`
+  - `GET /api/analyses/{id}`
 
 ## Local setup
 
@@ -153,7 +171,6 @@ Detailed deployment steps will be finalized in Phase 4 after history pages are i
 
 ## Planned future improvements
 
-- Build history pages (`/history`, `/history/[id]`)
 - Replace keyword-only matching with embedding-assisted ranking
 - Add optional record deletion endpoint
 - Add tests (unit + API integration)

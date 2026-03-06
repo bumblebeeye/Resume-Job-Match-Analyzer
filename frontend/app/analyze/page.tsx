@@ -12,16 +12,23 @@ export default function AnalyzePage() {
             Upload one resume and compare it with one job description.
           </p>
         </div>
-        <Link
-          href="/"
-          className="rounded-xl border border-slate-300 bg-white/80 px-4 py-2 text-sm font-medium text-ink transition hover:bg-white"
-        >
-          Back Home
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/history"
+            className="rounded-xl border border-slate-300 bg-white/80 px-4 py-2 text-sm font-medium text-ink transition hover:bg-white"
+          >
+            View History
+          </Link>
+          <Link
+            href="/"
+            className="rounded-xl border border-slate-300 bg-white/80 px-4 py-2 text-sm font-medium text-ink transition hover:bg-white"
+          >
+            Back Home
+          </Link>
+        </div>
       </div>
 
       <AnalyzerForm />
     </main>
   );
 }
-

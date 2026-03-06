@@ -10,7 +10,7 @@ const features = [
   "Explainable skill-overlap scoring",
   "Readable summary for quick decision-making",
   "Structured suggestions to improve resume targeting",
-  "Saved analyses for history view (Phase 3)",
+  "Saved analyses with detailed history views",
 ];
 
 export default function HomePage() {
@@ -34,6 +34,12 @@ export default function HomePage() {
             className="rounded-xl bg-ink px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate"
           >
             Start Analysis
+          </Link>
+          <Link
+            href="/history"
+            className="rounded-xl border border-slate-300 bg-white/80 px-6 py-3 text-sm font-semibold text-ink transition hover:bg-white"
+          >
+            View History
           </Link>
           <span className="text-sm text-slate">
             No sign-in required for MVP. Single-user demo flow.
@@ -70,4 +76,3 @@ export default function HomePage() {
     </main>
   );
 }
-
