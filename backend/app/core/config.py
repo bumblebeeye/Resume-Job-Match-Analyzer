@@ -1,3 +1,4 @@
+import json
 from functools import lru_cache
 
 from pydantic import field_validator
@@ -15,15 +16,34 @@ class Settings(BaseSettings):
     database_url: str = (
         "postgresql+psycopg2://postgres:postgres@localhost:5432/resume_matcher"
     )
-    cors_origins: list[str] = ["http://localhost:3000"]
-    resume_storage_path: str = "backend/storage/resumes"
+    cors_origins: str = "http://localhost:3000"
+    resume_storage_path: str = "storage/resumes"
 
     @field_validator("cors_origins", mode="before")
     @classmethod
-    def parse_cors_origins(cls, value: str | list[str]) -> list[str]:
+    def normalize_cors_origins(cls, value: str | list[str]) -> str:
+        # Keep environment parsing resilient across local/dev/prod formats.
+        # Accepted examples:
+        # - "http://localhost:3000,http://127.0.0.1:3000"
+        # - '["https://app.vercel.app","http://localhost:3000"]'
         if isinstance(value, str):
-            return [origin.strip() for origin in value.split(",") if origin.strip()]
-        return value
+            return value.strip()
+        return ",".join(origin.strip() for origin in value if origin.strip())
+
+    def get_cors_origins(self) -> list[str]:
+        raw = self.cors_origins.strip()
+        if not raw:
+            return []
+
+        if raw.startswith("["):
+            try:
+                loaded = json.loads(raw)
+                if isinstance(loaded, list):
+                    return [str(origin).strip() for origin in loaded if str(origin).strip()]
+            except json.JSONDecodeError:
+                pass
+
+        return [origin.strip() for origin in raw.split(",") if origin.strip()]
 
 
 @lru_cache
@@ -32,4 +52,3 @@ def get_settings() -> Settings:
 
 
 settings = get_settings()
-

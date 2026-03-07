@@ -3,7 +3,7 @@
 Resume-Job Match Analyzer is a portfolio-oriented full-stack MVP that compares an uploaded resume against a job description and returns an AI-assisted fit analysis.
 
 This repository is being built in phases.  
-Current status: **Phase 3 complete (`/history` and `/history/[id]` added).**
+Current status: **Phase 4 complete (deployment polish for Vercel + Render + Railway).**
 
 ## Why this project
 
@@ -78,6 +78,18 @@ docs/          # build phases and planning notes
   - `GET /api/analyses`
   - `GET /api/analyses/{id}`
 
+## Phase 4 features implemented
+
+- Deployment-ready environment variable guidance for:
+  - Vercel (frontend)
+  - Render (backend)
+  - Railway (PostgreSQL)
+- Backend CORS parsing hardened for cloud env formats:
+  - comma-separated string
+  - JSON-array string
+- Backend resume storage path normalized to avoid nested `backend/backend` writes
+- Monorepo Next.js tracing root configured for cleaner Vercel builds
+
 ## Local setup
 
 ### 1. Environment variables
@@ -89,7 +101,7 @@ Required variables:
 - `DATABASE_URL`
 - `CORS_ORIGINS`
 - `RESUME_STORAGE_PATH`
-- `NEXT_PUBLIC_API_BASE_URL` (used in Phase 2 frontend)
+- `NEXT_PUBLIC_API_BASE_URL`
 
 ### 2. Start PostgreSQL and create schema
 
@@ -154,20 +166,69 @@ Returns analysis history records (id, role/company, match score, created time).
 
 Returns one analysis in detail, including stored result sections.
 
-## Deployment preparation notes (for later phases)
+## Deployment (Vercel + Render + Railway)
 
-Planned targets:
-- Frontend: Vercel
-- Backend: Render
-- Database: Railway PostgreSQL
+### 1. Create Railway PostgreSQL
 
-Phase 1 already aligns with deployment basics:
-- backend start command compatible with Render:
-  - `uvicorn main:app --host 0.0.0.0 --port $PORT`
-- DB connection via `DATABASE_URL`
-- CORS controlled with env variable
+- Create a Railway project and add PostgreSQL.
+- Copy the Railway Postgres connection string.
+- Initialize schema:
 
-Detailed deployment steps will be finalized in Phase 4 after history pages are implemented.
+```bash
+psql "<RAILWAY_DATABASE_URL>" -f database/schema.sql
+```
+
+### 2. Deploy backend to Render
+
+- Create a Render Web Service from this repo.
+- Configure:
+  - Root Directory: `backend`
+  - Build Command: `pip install -r requirements.txt`
+  - Start Command: `uvicorn main:app --host 0.0.0.0 --port $PORT`
+- Set environment variables:
+  - `APP_ENV=production`
+  - `DATABASE_URL=<RAILWAY_DATABASE_URL>`
+  - `RESUME_STORAGE_PATH=storage/resumes`
+  - `CORS_ORIGINS=["https://your-frontend.vercel.app","http://localhost:3000"]`
+- Verify:
+  - `https://<render-service>.onrender.com/health` returns `{"status":"ok"}`.
+
+### 3. Deploy frontend to Vercel
+
+- Import this repo in Vercel.
+- Set Root Directory to `frontend`.
+- Set environment variable:
+  - `NEXT_PUBLIC_API_BASE_URL=https://<render-service>.onrender.com`
+- Deploy and open the production domain.
+
+### 4. Final cross-service wiring
+
+- Ensure backend `CORS_ORIGINS` includes your Vercel production domain.
+- Redeploy backend on Render after CORS changes.
+- Run production smoke test:
+  - upload resume in `/analyze`
+  - verify result renders
+  - verify record appears in `/history`
+  - open `/history/[id]` detail page
+
+## Required Production Environment Variables
+
+### Backend (Render)
+
+- `APP_ENV=production`
+- `DATABASE_URL=postgresql://...` (Railway)
+- `CORS_ORIGINS=["https://<vercel-domain>","http://localhost:3000"]`
+- `RESUME_STORAGE_PATH=storage/resumes`
+
+### Frontend (Vercel)
+
+- `NEXT_PUBLIC_API_BASE_URL=https://<render-service>.onrender.com`
+
+## Production-readiness notes
+
+- Current scoring is deterministic keyword-overlap MVP logic (no external LLM call yet).
+- Uploaded resume files are saved on local service disk; for long-term durability, move storage to object storage (for example, S3-compatible).
+- Add automated API/frontend tests and structured logging before scaling traffic.
 
 ## Planned future improvements
 
