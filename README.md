@@ -3,7 +3,7 @@
 Resume-Job Match Analyzer is a portfolio-oriented full-stack MVP that compares an uploaded resume against a job description and returns an AI-assisted fit analysis.
 
 This repository is being built in phases.  
-Current status: **Phase 4 complete (deployment polish for Vercel + Render + Railway).**
+Current status: **Phase 5 complete (AI-powered suggestion generation with fallback).**
 
 ## Why this project
 
@@ -90,6 +90,18 @@ docs/          # build phases and planning notes
 - Backend resume storage path normalized to avoid nested `backend/backend` writes
 - Monorepo Next.js tracing root configured for cleaner Vercel builds
 
+## Phase 5 features implemented
+
+- AI-powered improvement suggestions (Gemini) for missing-skill scenarios
+- Minimal-scope rollout:
+  - score/overlap/missing logic remains deterministic
+  - only suggestions can be AI-generated
+- Automatic fallback to rule-based suggestions when:
+  - AI is disabled
+  - no API key is configured
+  - AI request fails or times out
+- AI source metadata stored in analysis metadata (`suggestions_source`, `ai_model` when used)
+
 ## Local setup
 
 ### 1. Environment variables
@@ -102,6 +114,11 @@ Required variables:
 - `CORS_ORIGINS`
 - `RESUME_STORAGE_PATH`
 - `NEXT_PUBLIC_API_BASE_URL`
+- Optional AI vars (backend):
+  - `AI_SUGGESTIONS_ENABLED`
+  - `GEMINI_API_KEY`
+  - `AI_MODEL`
+  - `AI_TIMEOUT_SECONDS`
 
 ### 2. Start PostgreSQL and create schema
 
@@ -219,6 +236,10 @@ psql "<RAILWAY_DATABASE_URL>" -f database/schema.sql
 - `DATABASE_URL=postgresql://...` (Railway)
 - `CORS_ORIGINS=["https://<vercel-domain>","http://localhost:3000"]`
 - `RESUME_STORAGE_PATH=storage/resumes`
+- `AI_SUGGESTIONS_ENABLED=true` (optional)
+- `GEMINI_API_KEY=<your-gemini-api-key>` (required only when AI enabled)
+- `AI_MODEL=gemini-2.5-flash` (optional)
+- `AI_TIMEOUT_SECONDS=8` (optional)
 
 ### Frontend (Vercel)
 

@@ -29,3 +29,8 @@
 - Deployment-ready setup for Vercel (frontend), Render (backend), Railway (PostgreSQL)
 - Production environment variable documentation
 - Final UX polish and portfolio-level cleanup
+
+## Phase 5 (implemented)
+- Minimal AI integration for improvement suggestions only
+- Gemini-backed suggestions when missing skills exist
+- Rule-based fallback when AI is disabled/unavailable

@@ -1,7 +1,9 @@
 import re
 from dataclasses import dataclass
 
+from app.core.config import settings
 from app.schemas.analysis import AnalysisResult
+from app.services.ai_suggestions import AISuggestionError, generate_gemini_suggestions
 
 SKILL_KEYWORDS = {
     "python",
@@ -83,14 +85,23 @@ def analyze_resume_job_match(
         overlap_count=len(overlapping_skills),
         required_count=len(signals.job_skills),
     )
-    suggestions = _build_suggestions(missing_skills)
+    suggestions, suggestions_source, ai_error = _build_suggestions(
+        missing_skills=missing_skills,
+        role_title=role_title,
+        company_name=company_name,
+    )
 
     metadata = {
         "resume_skill_count": len(signals.resume_skills),
         "job_skill_count": len(signals.job_skills),
         "overlap_count": len(overlapping_skills),
         "scoring_version": "phase1-keyword-overlap-v1",
+        "suggestions_source": suggestions_source,
     }
+    if suggestions_source == "ai":
+        metadata["ai_model"] = settings.ai_model
+    if ai_error:
+        metadata["ai_error"] = ai_error
 
     return AnalysisResult(
         match_score=match_score,
@@ -149,7 +160,43 @@ def _build_summary(
     )
 
 
-def _build_suggestions(missing_skills: list[str]) -> list[str]:
+def _build_suggestions(
+    *,
+    missing_skills: list[str],
+    role_title: str,
+    company_name: str | None,
+) -> tuple[list[str], str, str | None]:
+    # No gap detected: keep deterministic output and skip AI call entirely.
+    if not missing_skills:
+        return (_build_rule_based_suggestions(missing_skills), "rule_based", None)
+
+    # AI suggestion path is optional and guarded by env configuration.
+    if settings.ai_suggestions_enabled and settings.gemini_api_key:
+        try:
+            ai_suggestions = generate_gemini_suggestions(
+                missing_skills=missing_skills,
+                role_title=role_title,
+                company_name=company_name,
+                api_key=settings.gemini_api_key,
+                model=settings.ai_model,
+                timeout_seconds=settings.ai_timeout_seconds,
+            )
+            if ai_suggestions:
+                return (ai_suggestions, "ai", None)
+        except AISuggestionError as exc:
+            return (
+                _build_rule_based_suggestions(missing_skills),
+                "rule_based_fallback",
+                str(exc),
+            )
+
+    if not settings.ai_suggestions_enabled:
+        return (_build_rule_based_suggestions(missing_skills), "rule_based_ai_disabled", None)
+
+    return (_build_rule_based_suggestions(missing_skills), "rule_based_no_api_key", None)
+
+
+def _build_rule_based_suggestions(missing_skills: list[str]) -> list[str]:
     if not missing_skills:
         return [
             "Your resume already covers the key detected skills. "
@@ -165,4 +212,3 @@ def _build_suggestions(missing_skills: list[str]) -> list[str]:
         "Customize the resume summary so it mirrors the role requirements and keywords."
     )
     return suggestions
-

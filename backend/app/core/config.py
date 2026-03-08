@@ -18,6 +18,10 @@ class Settings(BaseSettings):
     )
     cors_origins: str = "http://localhost:3000"
     resume_storage_path: str = "storage/resumes"
+    ai_suggestions_enabled: bool = False
+    gemini_api_key: str | None = None
+    ai_model: str = "gemini-2.5-flash"
+    ai_timeout_seconds: float = 8.0
 
     @field_validator("cors_origins", mode="before")
     @classmethod
@@ -29,6 +33,11 @@ class Settings(BaseSettings):
         if isinstance(value, str):
             return value.strip()
         return ",".join(origin.strip() for origin in value if origin.strip())
+
+    @field_validator("ai_model", mode="before")
+    @classmethod
+    def normalize_ai_model(cls, value: str) -> str:
+        return value.strip().lower().replace(" ", "-")
 
     def get_cors_origins(self) -> list[str]:
         raw = self.cors_origins.strip()
