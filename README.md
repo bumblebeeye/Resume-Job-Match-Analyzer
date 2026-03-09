@@ -161,8 +161,8 @@ Open `http://localhost:3000`.
 ```bash
 cd backend
 source .venv/bin/activate
-pip install -r requirements.txt
-pytest -q
+python -m pip install -r requirements.txt
+python -m pytest -q
 ```
 
 Current tests cover:
