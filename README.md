@@ -156,6 +156,21 @@ npm run dev
 
 Open `http://localhost:3000`.
 
+### 5. Run backend tests (pytest)
+
+```bash
+cd backend
+source .venv/bin/activate
+pip install -r requirements.txt
+pytest -q
+```
+
+Current tests cover:
+- API health check (`GET /health`)
+- Core analyze flow (`POST /api/analyze`)
+- History list/detail retrieval (`GET /api/analyses`, `GET /api/analyses/{id}`)
+- Basic validation and not-found paths
+
 ## API contract (current)
 
 ### `POST /api/analyze`
@@ -247,7 +262,7 @@ psql "<RAILWAY_DATABASE_URL>" -f database/schema.sql
 
 ## Production-readiness notes
 
-- Current scoring is deterministic keyword-overlap MVP logic (no external LLM call yet).
+- Core match scoring is deterministic keyword-overlap logic; suggestion text can be Gemini-powered when enabled.
 - Uploaded resume files are saved on local service disk; for long-term durability, move storage to object storage (for example, S3-compatible).
 - Add automated API/frontend tests and structured logging before scaling traffic.
 
@@ -255,5 +270,5 @@ psql "<RAILWAY_DATABASE_URL>" -f database/schema.sql
 
 - Replace keyword-only matching with embedding-assisted ranking
 - Add optional record deletion endpoint
-- Add tests (unit + API integration)
+- Expand automated test coverage (service-level + frontend)
 - Improve parsing coverage for DOCX and scanned PDFs
