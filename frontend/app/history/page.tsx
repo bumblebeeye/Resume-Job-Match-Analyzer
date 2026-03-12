@@ -1,6 +1,10 @@
+"use client";
+
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
 import { fetchAnalyses } from "@/lib/api";
+import { AnalysisListItem } from "@/types/analysis";
 
 function formatScore(score: number): string {
   return `${score.toFixed(2)}%`;
@@ -10,8 +14,40 @@ function formatTimestamp(timestamp: string): string {
   return new Date(timestamp).toLocaleString();
 }
 
-export default async function HistoryPage() {
-  const analyses = await fetchAnalyses();
+export default function HistoryPage() {
+  const [analyses, setAnalyses] = useState<AnalysisListItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string>("");
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadHistory() {
+      setIsLoading(true);
+      setErrorMessage("");
+      try {
+        const data = await fetchAnalyses();
+        if (active) {
+          setAnalyses(data);
+        }
+      } catch (error) {
+        if (!active) return;
+        const message =
+          error instanceof Error ? error.message : "Unable to load history.";
+        setErrorMessage(message);
+      } finally {
+        if (active) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    void loadHistory();
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   return (
     <main className="mx-auto max-w-6xl px-6 pb-16 pt-8 md:px-10">
@@ -38,7 +74,19 @@ export default async function HistoryPage() {
         </div>
       </header>
 
-      {analyses.length === 0 ? (
+      {isLoading ? (
+        <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-card">
+          <p className="text-sm font-medium text-ink">Loading history…</p>
+          <p className="mt-2 text-sm text-slate">
+            First load may take longer if the backend is waking up.
+          </p>
+        </section>
+      ) : errorMessage ? (
+        <section className="rounded-3xl border border-red-200 bg-white p-8 shadow-card">
+          <h2 className="text-2xl font-semibold text-ink">Unable to load history</h2>
+          <p className="mt-3 text-sm text-red-700">{errorMessage}</p>
+        </section>
+      ) : analyses.length === 0 ? (
         <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-card">
           <h2 className="text-2xl font-semibold text-ink">No saved analyses yet</h2>
           <p className="mt-3 text-sm text-slate">
