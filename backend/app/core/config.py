@@ -18,6 +18,9 @@ class Settings(BaseSettings):
     )
     cors_origins: str = "http://localhost:3000"
     resume_storage_path: str = "storage/resumes"
+    aws_region: str | None = None
+    s3_bucket_name: str | None = None
+    s3_resume_prefix: str = "resumes"
     ai_suggestions_enabled: bool = False
     gemini_api_key: str | None = None
     ai_model: str = "gemini-2.5-flash"

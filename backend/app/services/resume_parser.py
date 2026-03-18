@@ -1,11 +1,16 @@
 from io import BytesIO
+import logging
 from pathlib import Path
 from uuid import uuid4
 
+import boto3
+from botocore.exceptions import BotoCoreError, ClientError
 from fastapi import UploadFile
 from pypdf import PdfReader
 
 from app.core.config import settings
+
+logger = logging.getLogger(__name__)
 
 
 class ResumeParserError(ValueError):
@@ -20,12 +25,52 @@ async def save_resume_file(upload_file: UploadFile) -> tuple[str, str, bytes]:
     extension = Path(upload_file.filename).suffix.lower() or ".bin"
     stored_filename = f"{uuid4().hex}{extension}"
 
+    if settings.s3_bucket_name:
+        s3_object_key = _build_s3_object_key(stored_filename)
+        uploaded = _upload_to_s3(
+            object_key=s3_object_key,
+            content=raw_bytes,
+            content_type=upload_file.content_type,
+        )
+        if uploaded:
+            s3_uri = f"s3://{settings.s3_bucket_name}/{s3_object_key}"
+            return s3_uri, stored_filename, raw_bytes
+        logger.warning("S3 upload failed; falling back to local filesystem storage.")
+
     storage_path = Path(settings.resume_storage_path)
     storage_path.mkdir(parents=True, exist_ok=True)
     full_path = storage_path / stored_filename
     full_path.write_bytes(raw_bytes)
 
     return str(full_path), stored_filename, raw_bytes
+
+
+def _build_s3_object_key(stored_filename: str) -> str:
+    prefix = settings.s3_resume_prefix.strip().strip("/")
+    if prefix:
+        return f"{prefix}/{stored_filename}"
+    return stored_filename
+
+
+def _upload_to_s3(object_key: str, content: bytes, content_type: str | None) -> bool:
+    client_kwargs: dict[str, str] = {}
+    if settings.aws_region and settings.aws_region.strip():
+        client_kwargs["region_name"] = settings.aws_region.strip()
+
+    try:
+        s3_client = boto3.client("s3", **client_kwargs)
+        put_kwargs: dict[str, str | bytes] = {
+            "Bucket": settings.s3_bucket_name or "",
+            "Key": object_key,
+            "Body": content,
+        }
+        if content_type:
+            put_kwargs["ContentType"] = content_type
+        s3_client.put_object(**put_kwargs)
+        return True
+    except (BotoCoreError, ClientError, ValueError) as exc:
+        logger.warning("Failed to upload resume to S3: %s", exc)
+        return False
 
 
 def extract_resume_text(filename: str, file_bytes: bytes) -> str:
@@ -56,4 +101,3 @@ def _extract_pdf_text(file_bytes: bytes) -> str:
         )
 
     return text
-
