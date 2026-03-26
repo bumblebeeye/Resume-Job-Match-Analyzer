@@ -34,3 +34,24 @@
 - Minimal AI integration for improvement suggestions only
 - Gemini-backed suggestions when missing skills exist
 - Rule-based fallback when AI is disabled/unavailable
+
+## Phase 6 (implemented)
+- AWS migration baseline established while keeping legacy Vercel/Render/Railway deployment untouched
+- Frontend deployed on AWS Amplify
+- Backend deployed on AWS App Runner
+- Resume storage and backend configuration prepared for AWS environment variables
+- Current known-good public endpoints:
+  - Frontend: `https://codex-aws-phase6.d7aj7hvvxk2xv.amplifyapp.com/`
+  - Backend: `https://q22emiur7s.ap-southeast-2.awsapprunner.com/`
+
+## Phase 7 (planned)
+- Hardening and DevOps improvements executed in small gated steps
+- CI pipeline for backend/frontend checks
+- CI security scanning for secrets and dependency issues
+- Backend request/input safety improvements
+- Standardized error handling and request tracing
+- API protection controls
+- AWS network hardening
+- Observability and alarm setup
+- Safer deployment workflow with smoke checks
+- Runbook and portfolio case-study documentation
