@@ -290,12 +290,18 @@ psql "<RAILWAY_DATABASE_URL>" -f database/schema.sql
 ## Production-readiness notes
 
 - Core match scoring is deterministic keyword-overlap logic; suggestion text can be Gemini-powered when enabled.
-- Uploaded resume files are saved on local service disk; for long-term durability, move storage to object storage (for example, S3-compatible).
+- Uploaded resume files can be stored on local disk for simple deployments or pushed to S3 when AWS storage is configured.
 - Add automated API/frontend tests and structured logging before scaling traffic.
 
-## Planned future improvements
+## Honest future roadmap
 
-- Replace keyword-only matching with embedding-assisted ranking
-- Add optional record deletion endpoint
-- Expand automated test coverage (service-level + frontend)
-- Improve parsing coverage for DOCX and scanned PDFs
+These items are not implemented yet. They are the next logical steps for turning the project into a more complete production AI system.
+
+- Add Terraform-managed infrastructure for repeatable cloud provisioning.
+- Add CI/CD pipelines for automated test, build, and deploy workflows.
+- Add AWS Bedrock support as an alternative model provider alongside Gemini.
+- Add richer observability for request outcomes, fallback rates, and model behavior.
+- Add structured evaluation runs for prompt/output quality over time.
+- Add agent-style orchestration for multi-step resume review workflows.
+- Replace keyword-only matching with embedding-assisted ranking.
+- Improve parsing coverage for DOCX and scanned PDFs.
