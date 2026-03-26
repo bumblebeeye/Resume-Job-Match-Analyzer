@@ -1,6 +1,6 @@
 # Resume-Job Match Analyzer
 
-Resume-Job Match Analyzer is a portfolio-oriented full-stack MVP that compares an uploaded resume against a job description and returns an AI-assisted fit analysis.
+Resume-Job Match Analyzer is a full-stack AI-assisted workflow app that compares an uploaded resume against a job description and returns a production-minded fit analysis. The project combines deterministic scoring, optional LLM-generated suggestions, persistent analysis history, and cloud-ready file storage to show how GenAI can be embedded into a practical business workflow.
 
 This repository is being built in phases.  
 Current status: **Phase 5 complete (AI-powered suggestion generation with fallback).**
@@ -8,10 +8,20 @@ Current status: **Phase 5 complete (AI-powered suggestion generation with fallba
 ## Why this project
 
 This app demonstrates:
-- web product thinking
-- Python backend architecture
-- SQL relational modeling
-- AI-assisted text analysis in a practical workflow
+- full-stack product delivery with Next.js, FastAPI, and PostgreSQL
+- deterministic analysis paired with optional LLM augmentation
+- production-minded reliability through fallback paths and stored metadata
+- cloud-aware backend design, including S3-backed resume storage with local fallback
+
+## Why this matters for production AI
+
+This project is intentionally not "LLM for everything." The core score and skill-gap analysis are deterministic so results stay explainable and resilient. AI is used only for suggestion generation, and only when the feature is enabled and credentials are configured.
+
+That design makes the system easier to operate:
+- deterministic matching logic remains available even when AI is disabled
+- Gemini suggestions degrade safely to rule-based guidance on API errors or timeouts
+- each analysis stores metadata such as scoring version, suggestion source, and AI model
+- uploaded files can use S3 storage in AWS-oriented deployments, with local disk fallback for simpler environments
 
 ## Tech stack
 
@@ -38,11 +48,11 @@ docs/          # build phases and planning notes
   - supports PDF/TXT/MD input
   - extracts text for analysis
 - Analysis pipeline:
-  - keyword-based skill extraction
+  - keyword-based skill extraction for software, cloud, and AI-focused roles
   - explainable match score
   - overlapping skills
   - missing skills
-  - summary and suggestions
+  - summary and structured suggestions
 - Persistence:
   - `resumes`, `job_descriptions`, `analyses` relational tables
   - JSONB fields for semi-structured analysis outputs
@@ -102,6 +112,16 @@ docs/          # build phases and planning notes
   - AI request fails or times out
 - AI source metadata stored in analysis metadata (`suggestions_source`, `ai_model` when used)
 
+## Architecture overview
+
+1. The frontend uploads a resume and job description to the FastAPI backend.
+2. The backend extracts resume text, then identifies skill signals from the resume and job description.
+3. The deterministic analysis layer calculates overlap, missing skills, and the match score.
+4. The optional AI layer generates targeted improvement suggestions when missing skills exist.
+5. The system stores the uploaded resume record, job description, analysis result, and metadata for later review.
+
+This keeps the system explainable while still showing practical GenAI integration.
+
 ## Local setup
 
 ### 1. Environment variables
@@ -114,6 +134,10 @@ Required variables:
 - `CORS_ORIGINS`
 - `RESUME_STORAGE_PATH`
 - `NEXT_PUBLIC_API_BASE_URL`
+- Optional AWS storage vars (backend):
+  - `AWS_REGION`
+  - `S3_BUCKET_NAME`
+  - `S3_RESUME_PREFIX`
 - Optional AI vars (backend):
   - `AI_SUGGESTIONS_ENABLED`
   - `GEMINI_API_KEY`
@@ -251,6 +275,9 @@ psql "<RAILWAY_DATABASE_URL>" -f database/schema.sql
 - `DATABASE_URL=postgresql://...` (Railway)
 - `CORS_ORIGINS=["https://<vercel-domain>","http://localhost:3000"]`
 - `RESUME_STORAGE_PATH=storage/resumes`
+- `AWS_REGION=ap-southeast-2` (optional)
+- `S3_BUCKET_NAME=<your-s3-bucket>` (optional)
+- `S3_RESUME_PREFIX=resumes` (optional)
 - `AI_SUGGESTIONS_ENABLED=true` (optional)
 - `GEMINI_API_KEY=<your-gemini-api-key>` (required only when AI enabled)
 - `AI_MODEL=gemini-2.5-flash` (optional)

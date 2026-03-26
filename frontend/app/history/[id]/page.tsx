@@ -11,6 +11,23 @@ function formatTimestamp(timestamp: string): string {
   return new Date(timestamp).toLocaleString();
 }
 
+function readMetadataValue(
+  metadata: Record<string, unknown>,
+  key: string,
+): string | null {
+  const value = metadata[key];
+
+  if (typeof value === "string" && value.trim()) {
+    return value;
+  }
+
+  if (typeof value === "number") {
+    return String(value);
+  }
+
+  return null;
+}
+
 export default async function HistoryDetailPage({ params }: HistoryDetailPageProps) {
   const { id } = await params;
   const analysisId = Number(id);
@@ -21,6 +38,14 @@ export default async function HistoryDetailPage({ params }: HistoryDetailPagePro
 
   try {
     const analysis = await fetchAnalysisById(analysisId);
+    const metadata = analysis.analysis_metadata;
+    const suggestionsSource = readMetadataValue(metadata, "suggestions_source");
+    const aiModel = readMetadataValue(metadata, "ai_model");
+    const aiError = readMetadataValue(metadata, "ai_error");
+    const scoringVersion = readMetadataValue(metadata, "scoring_version");
+    const overlapCount = readMetadataValue(metadata, "overlap_count");
+    const jobSkillCount = readMetadataValue(metadata, "job_skill_count");
+    const resumeSkillCount = readMetadataValue(metadata, "resume_skill_count");
 
     return (
       <main className="mx-auto max-w-6xl px-6 pb-16 pt-8 md:px-10">
@@ -78,6 +103,45 @@ export default async function HistoryDetailPage({ params }: HistoryDetailPagePro
             <div className="mt-6">
               <h3 className="text-lg font-semibold text-ink">Summary</h3>
               <p className="mt-2 text-sm text-slate">{analysis.summary}</p>
+            </div>
+
+            <div className="mt-6">
+              <h3 className="text-lg font-semibold text-ink">Analysis metadata</h3>
+              <dl className="mt-3 grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 text-sm text-slate sm:grid-cols-2">
+                <div>
+                  <dt className="font-semibold text-ink">Suggestions source</dt>
+                  <dd>{suggestionsSource ?? "-"}</dd>
+                </div>
+                <div>
+                  <dt className="font-semibold text-ink">AI model</dt>
+                  <dd>{aiModel ?? "-"}</dd>
+                </div>
+                <div>
+                  <dt className="font-semibold text-ink">Scoring version</dt>
+                  <dd>{scoringVersion ?? "-"}</dd>
+                </div>
+                <div>
+                  <dt className="font-semibold text-ink">Overlap coverage</dt>
+                  <dd>
+                    {overlapCount && jobSkillCount
+                      ? `${overlapCount} / ${jobSkillCount}`
+                      : "-"}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="font-semibold text-ink">Resume skill signals</dt>
+                  <dd>{resumeSkillCount ?? "-"}</dd>
+                </div>
+                <div>
+                  <dt className="font-semibold text-ink">Job skill signals</dt>
+                  <dd>{jobSkillCount ?? "-"}</dd>
+                </div>
+              </dl>
+              {aiError ? (
+                <p className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                  AI fallback triggered: {aiError}
+                </p>
+              ) : null}
             </div>
           </article>
 
