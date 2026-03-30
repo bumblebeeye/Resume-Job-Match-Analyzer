@@ -2,10 +2,11 @@ from fastapi.testclient import TestClient
 
 
 def test_health_check(client: TestClient) -> None:
-    response = client.get("/health")
+    response = client.get("/health", headers={"X-Request-ID": "health-check-123"})
 
     assert response.status_code == 200
     assert response.json() == {"status": "ok"}
+    assert response.headers["X-Request-ID"] == "health-check-123"
 
 
 def test_analyze_and_history_flow(client: TestClient) -> None:
@@ -52,6 +53,8 @@ def test_get_analysis_not_found(client: TestClient) -> None:
 
     assert response.status_code == 404
     assert response.json()["detail"] == "Analysis not found."
+    assert response.json()["error_code"] == "not_found"
+    assert response.json()["request_id"] == response.headers["X-Request-ID"]
 
 
 def test_analyze_rejects_blank_role_title(client: TestClient) -> None:
@@ -72,6 +75,8 @@ def test_analyze_rejects_blank_role_title(client: TestClient) -> None:
 
     assert response.status_code == 400
     assert response.json()["detail"] == "role_title is required."
+    assert response.json()["error_code"] == "bad_request"
+    assert response.json()["request_id"] == response.headers["X-Request-ID"]
 
 
 def test_analyze_rejects_unsupported_resume_content_type(client: TestClient) -> None:
@@ -94,6 +99,8 @@ def test_analyze_rejects_unsupported_resume_content_type(client: TestClient) -> 
     assert response.json()["detail"] == (
         "Unsupported content type for .pdf files. Use one of: application/pdf."
     )
+    assert response.json()["error_code"] == "bad_request"
+    assert response.json()["request_id"] == response.headers["X-Request-ID"]
 
 
 def test_analyze_rejects_oversized_resume_file(client: TestClient) -> None:
@@ -121,3 +128,14 @@ def test_analyze_rejects_oversized_resume_file(client: TestClient) -> None:
 
     assert response.status_code == 400
     assert response.json()["detail"] == "Uploaded file exceeds the 10 bytes limit."
+    assert response.json()["error_code"] == "bad_request"
+    assert response.json()["request_id"] == response.headers["X-Request-ID"]
+
+
+def test_analyze_validation_errors_use_standardized_error_shape(client: TestClient) -> None:
+    response = client.post("/api/analyze", data={})
+
+    assert response.status_code == 422
+    assert response.json()["detail"] == "Request validation failed."
+    assert response.json()["error_code"] == "validation_error"
+    assert response.json()["request_id"] == response.headers["X-Request-ID"]

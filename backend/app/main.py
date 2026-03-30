@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
+from app.core.error_handling import register_error_handling
 from app.routers.analysis import router as analysis_router
 
 app = FastAPI(
@@ -17,6 +18,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+register_error_handling(app)
 
 app.include_router(analysis_router, prefix="/api", tags=["analysis"])
 
