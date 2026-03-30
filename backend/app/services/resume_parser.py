@@ -12,6 +12,12 @@ from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
+SUPPORTED_RESUME_CONTENT_TYPES = {
+    ".pdf": {"application/pdf"},
+    ".txt": {"text/plain"},
+    ".md": {"text/markdown", "text/plain", "text/x-markdown"},
+}
+
 
 class ResumeParserError(ValueError):
     pass
@@ -21,8 +27,12 @@ async def save_resume_file(upload_file: UploadFile) -> tuple[str, str, bytes]:
     if not upload_file.filename:
         raise ResumeParserError("Uploaded file must include a filename.")
 
-    raw_bytes = await upload_file.read()
     extension = Path(upload_file.filename).suffix.lower() or ".bin"
+    _validate_resume_file_metadata(extension=extension, content_type=upload_file.content_type)
+
+    raw_bytes = await upload_file.read()
+    _validate_resume_file_size(len(raw_bytes))
+
     stored_filename = f"{uuid4().hex}{extension}"
 
     if settings.s3_bucket_name:
@@ -71,6 +81,43 @@ def _upload_to_s3(object_key: str, content: bytes, content_type: str | None) -> 
     except (BotoCoreError, ClientError, ValueError) as exc:
         logger.warning("Failed to upload resume to S3: %s", exc)
         return False
+
+
+def _validate_resume_file_metadata(extension: str, content_type: str | None) -> None:
+    allowed_content_types = SUPPORTED_RESUME_CONTENT_TYPES.get(extension)
+    if not allowed_content_types:
+        raise ResumeParserError(
+            "Unsupported file type. Phase 1 supports PDF, TXT, and MD uploads."
+        )
+
+    normalized_content_type = (content_type or "").strip().lower()
+    if not normalized_content_type or normalized_content_type not in allowed_content_types:
+        supported_types = ", ".join(sorted(allowed_content_types))
+        raise ResumeParserError(
+            f"Unsupported content type for {extension} files. Use one of: {supported_types}."
+        )
+
+
+def _validate_resume_file_size(file_size_bytes: int) -> None:
+    if file_size_bytes <= settings.max_resume_upload_bytes:
+        return
+
+    raise ResumeParserError(
+        f"Uploaded file exceeds the {_format_file_size(settings.max_resume_upload_bytes)} limit."
+    )
+
+
+def _format_file_size(file_size_bytes: int) -> str:
+    megabyte = 1024 * 1024
+    kilobyte = 1024
+
+    if file_size_bytes % megabyte == 0:
+        return f"{file_size_bytes // megabyte} MB"
+    if file_size_bytes % kilobyte == 0:
+        return f"{file_size_bytes // kilobyte} KB"
+    if file_size_bytes == 1:
+        return "1 byte"
+    return f"{file_size_bytes} bytes"
 
 
 def extract_resume_text(filename: str, file_bytes: bytes) -> str:

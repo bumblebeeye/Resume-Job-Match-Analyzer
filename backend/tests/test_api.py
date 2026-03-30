@@ -72,3 +72,52 @@ def test_analyze_rejects_blank_role_title(client: TestClient) -> None:
 
     assert response.status_code == 400
     assert response.json()["detail"] == "role_title is required."
+
+
+def test_analyze_rejects_unsupported_resume_content_type(client: TestClient) -> None:
+    payload = {
+        "role_title": "Backend Engineer",
+        "company_name": "Acme",
+        "job_description": "Python FastAPI SQL",
+    }
+    files = {
+        "resume_file": (
+            "resume.pdf",
+            b"%PDF-1.4 fake content",
+            "text/plain",
+        )
+    }
+
+    response = client.post("/api/analyze", data=payload, files=files)
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == (
+        "Unsupported content type for .pdf files. Use one of: application/pdf."
+    )
+
+
+def test_analyze_rejects_oversized_resume_file(client: TestClient) -> None:
+    from app.core.config import settings
+
+    payload = {
+        "role_title": "Backend Engineer",
+        "company_name": "Acme",
+        "job_description": "Python FastAPI SQL",
+    }
+    files = {
+        "resume_file": (
+            "resume.txt",
+            b"0123456789ABCDEF",
+            "text/plain",
+        )
+    }
+    original_limit = settings.max_resume_upload_bytes
+    settings.max_resume_upload_bytes = 10
+
+    try:
+        response = client.post("/api/analyze", data=payload, files=files)
+    finally:
+        settings.max_resume_upload_bytes = original_limit
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Uploaded file exceeds the 10 bytes limit."

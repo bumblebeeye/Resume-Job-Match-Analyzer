@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     )
     cors_origins: str = "http://localhost:3000"
     resume_storage_path: str = "storage/resumes"
+    max_resume_upload_bytes: int = 5 * 1024 * 1024
     aws_region: str | None = None
     s3_bucket_name: str | None = None
     s3_resume_prefix: str = "resumes"
