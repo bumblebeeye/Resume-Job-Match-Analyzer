@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, s
 from sqlalchemy import select
 from sqlalchemy.orm import Session, joinedload
 
+from app.core.protection import enforce_api_protection
 from app.db.session import get_db
 from app.models.analysis import Analysis
 from app.models.job_description import JobDescription
@@ -10,7 +11,7 @@ from app.schemas.analysis import AnalysisDetailResponse, AnalysisListItem
 from app.services.analysis_service import analyze_resume_job_match
 from app.services.resume_parser import ResumeParserError, extract_resume_text, save_resume_file
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(enforce_api_protection)])
 
 
 @router.post("/analyze", response_model=AnalysisDetailResponse, status_code=status.HTTP_201_CREATED)
@@ -136,4 +137,3 @@ def _build_detail_response(
         analysis_metadata=analysis.analysis_metadata,
         created_at=analysis.created_at,
     )
-

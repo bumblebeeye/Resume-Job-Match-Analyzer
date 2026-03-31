@@ -139,3 +139,37 @@ def test_analyze_validation_errors_use_standardized_error_shape(client: TestClie
     assert response.json()["detail"] == "Request validation failed."
     assert response.json()["error_code"] == "validation_error"
     assert response.json()["request_id"] == response.headers["X-Request-ID"]
+
+
+def test_analyze_rate_limit_rejects_excess_requests(client: TestClient) -> None:
+    from app.core.config import settings
+
+    payload = {
+        "role_title": "Backend Engineer",
+        "company_name": "Acme",
+        "job_description": "Python FastAPI SQL Docker Kubernetes",
+    }
+    files = {
+        "resume_file": (
+            "resume.txt",
+            b"Built APIs in Python and FastAPI with SQL and Docker.",
+            "text/plain",
+        )
+    }
+    original_limit = settings.api_rate_limit_requests
+    original_window = settings.api_rate_limit_window_seconds
+    settings.api_rate_limit_requests = 1
+    settings.api_rate_limit_window_seconds = 60
+
+    try:
+        first_response = client.post("/api/analyze", data=payload, files=files)
+        second_response = client.post("/api/analyze", data=payload, files=files)
+    finally:
+        settings.api_rate_limit_requests = original_limit
+        settings.api_rate_limit_window_seconds = original_window
+
+    assert first_response.status_code == 201
+    assert second_response.status_code == 429
+    assert second_response.json()["detail"] == "Rate limit exceeded. Try again in 60 seconds."
+    assert second_response.json()["error_code"] == "rate_limit_exceeded"
+    assert second_response.json()["request_id"] == second_response.headers["X-Request-ID"]

@@ -9,6 +9,7 @@ from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.core.config import settings
+from app.core.protection import reset_rate_limit_history
 from app.db.session import get_db
 from app.main import app
 from app.models.analysis import Analysis
@@ -54,6 +55,7 @@ def client(tmp_path: Path) -> Generator[TestClient, None, None]:
     settings.resume_storage_path = str(upload_dir)
     settings.ai_suggestions_enabled = False
     settings.gemini_api_key = None
+    reset_rate_limit_history()
 
     app.dependency_overrides[get_db] = override_get_db
 
@@ -64,6 +66,7 @@ def client(tmp_path: Path) -> Generator[TestClient, None, None]:
     settings.resume_storage_path = original_storage_path
     settings.ai_suggestions_enabled = original_ai_enabled
     settings.gemini_api_key = original_ai_key
+    reset_rate_limit_history()
 
     Base.metadata.drop_all(bind=engine)
     engine.dispose()

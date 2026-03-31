@@ -83,4 +83,6 @@ def _http_error_code(status_code: int) -> str:
         return "bad_request"
     if status_code == 404:
         return "not_found"
+    if status_code == 429:
+        return "rate_limit_exceeded"
     return "http_error"
